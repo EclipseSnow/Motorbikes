@@ -1,0 +1,55 @@
+"""
+Created on Wed Sep  9 11:07:03 2020
+
+@author: Damien
+"""
+
+from selenium import webdriver 
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver import Chrome
+import pandas as pd
+import time
+
+path="C:\Program Files (x86)\Selenium\chromedriver.exe"
+
+browser = webdriver.Chrome(path)
+
+pages=3
+url='https://www.sgbikemart.com.sg/listing/usedbikes/listing/?page=1&'
+
+
+def getdata(start_url,pgs):
+    current=0
+    urls=browser.get(start_url)
+    browser.maximize_window()
+    df = pd.DataFrame(columns = ['Name:', 'Price:', 'Reg:', 'Type:', 'HP:', 'Mileage:'])
+    data={}
+    while current<pages:
+        motorcycles = browser.find_elements_by_css_selector('div.col-lg-9')
+        for motorcycle in motorcycles:
+            for m in motorcycle.find_elements_by_css_selector('div.pmd-card.pmd-z-depth'):
+                for name in m.find_elements_by_css_selector('div.pmd-card-header.text-center-xs'):
+                    data['Name:'] = name.text
+                    df = df.append(data, ignore_index = True)
+                for attributes in m.find_elements_by_css_selector('div.col-lg-10'):                    
+                    data['Price:'] = attributes.find_elements_by_css_selector('strong.listing-price')[0].text
+                    data['Reg:'] = attributes.find_elements_by_css_selector('div.col-lg-3')[1].text
+                    data['Type:'] = attributes.find_elements_by_css_selector('div.col-lg-3')[2].text
+                    data['HP:'] = attributes.find_elements_by_css_selector('div.col-lg-3')[2].text
+                    data['Mileage:'] = attributes.find_elements_by_css_selector('div.col-lg-2')[0].text
+        
+        if current == 0:
+            iter = 1
+        else:
+            iter = 2
+        
+        element = browser.find_elements_by_xpath("//a[@class = 'btn btn-rounded']")[iter]
+        location = element.location["y"] - 100
+        browser.execute_script("window.scrollTo(0, %d);" %location)
+        element.click()
+
+        current+=1
+
+    return df
+
+output=getdata(url,pages) 
